@@ -74,7 +74,22 @@
           "line": 147
         }
       }
+    },
+    {
+      "file": "/storage/emulated/0/AndroidIDEProjects/Hackers Keyboard/app/src/main/java/org/pocketworkstation/pckeyboard/LatinIME.java",
+      "selection": {
+        "end": {
+          "column": 80,
+          "index": 3536,
+          "line": 91
+        },
+        "start": {
+          "column": 80,
+          "index": 3536,
+          "line": 91
+        }
+      }
     }
   ],
-  "selectedFile": "/storage/emulated/0/AndroidIDEProjects/Hackers Keyboard/app/src/main/AndroidManifest.xml"
+  "selectedFile": "/storage/emulated/0/AndroidIDEProjects/Hackers Keyboard/app/src/main/java/org/pocketworkstation/pckeyboard/LatinIME.java"
 }

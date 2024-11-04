@@ -79,6 +79,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import android.Manifest; // Para Manifest.permission
+import android.content.Intent; // Para Intent
+import android.content.pm.PackageManager; // Para PackageManager
+import android.net.Uri; // Para Uri
+import android.os.Build; // Para Build.VERSION_CODES
+import android.provider.Settings; // Para Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+import androidx.core.app.ActivityCompat; // Para ActivityCompat
+import androidx.core.content.ContextCompat; // Para ContextCompat
+import androidx.core.app.NotificationManagerCompat; // Para NotificationManagerCompat
+import android.app.Notification; // Se você estiver usando Notification
+import android.inputmethodservice.InputMethodService; // Para InputMethodService
 
 /**
  * Input method implementation for Qwerty'ish keyboard.
@@ -276,6 +287,8 @@ public class LatinIME extends InputMethodService implements
     // reverting
     private CharSequence mEnteredText;
     private boolean mRefreshKeyboardRequired;
+    
+    NotificationCompat.Builder mBuilder;
 
     // For each word, a list of potential replacements, usually from voice.
     private Map<String, List<CharSequence>> mWordToSuggestions = new HashMap<String, List<CharSequence>>();
@@ -286,6 +299,7 @@ public class LatinIME extends InputMethodService implements
     private NotificationReceiver mNotificationReceiver;
 
     private VoiceRecognitionTrigger mVoiceRecognitionTrigger;
+    private static final int REQUEST_CODE_NOTIFICATION_PERMISSION = 100;
 
     public abstract static class WordAlternatives {
         protected CharSequence mChosenWord;
@@ -502,7 +516,7 @@ public class LatinIME extends InputMethodService implements
             String title = "Show Hacker's Keyboard";
             String body = "Select this to open the keyboard. Disable in settings.";
 
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon_hk_notification)
                     .setColor(0xff220044)
                     .setAutoCancel(false) //Make this notification automatically dismissed when the user touches it -> false.
@@ -529,10 +543,7 @@ public class LatinIME extends InputMethodService implements
             mNotificationManager.notify(ID, notification);
             */
 
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-            // notificationId is a unique int for each notification that you must define
-            notificationManager.notify(NOTIFICATION_ONGOING_ID, mBuilder.build());
+            checkNotificationPermission();
 
         } else if (mNotificationReceiver != null) {
             mNotificationManager.cancel(NOTIFICATION_ONGOING_ID);
@@ -541,6 +552,36 @@ public class LatinIME extends InputMethodService implements
         }
     }
     
+    private void checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Você deve chamar isso de um contexto adequado, como uma atividade.
+                // Como não está dentro de uma Activity, você pode precisar de uma
+                // abordagem alternativa para solicitar a permissão.
+                requestNotificationPermission();
+            } else {
+                sendNotification();
+            }
+        } else {
+            sendNotification();
+        }
+    }
+
+    private void requestNotificationPermission() {
+        // Para InputMethodService, você não pode usar ActivityCompat.requestPermissions()
+        // Aqui você deve, de alguma forma, fazer com que o usuário ative a permissão.
+        // Uma abordagem é direcioná-los a uma Activity que você cria para solicitar permissões.
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+    private void sendNotification() {
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(NOTIFICATION_ONGOING_ID, mBuilder.build());
+    }
     private boolean isPortrait() {
         return (mOrientation == Configuration.ORIENTATION_PORTRAIT);
     }
